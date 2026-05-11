@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Analítico - Tecnologías Web</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <style>
+        /* CSS Grid para estructurar el panel de control */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        header {
+            text-align: center;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        header h1 { margin: 0 0 10px 0; color: #1e3a8a; }
+        header p { margin: 0; font-size: 16px; font-weight: bold; color: #4b5563; }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .card h3 {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            position: relative;
+            margin-top: 15px;
+        }
+        
+        /* Estilos específicos para SVG nativo */
+        .svg-bar { fill: #1e40af; transition: width 0.5s ease; }
+        .svg-text { font-size: 12px; fill: #333; font-family: sans-serif; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Panel de Control Web - Logística y Ventas</h1>
+        <p>Autor: Telmo Lopez Alday | Username: tlopezalday</p>
+    </header>
+
+    <div class="dashboard-grid">
+        
+        <div class="card">
+            <h3>Ingresos Brutos por Mes | Chart.js | @tlopezalday</h3>
+            <div class="chart-container">
+                <canvas id="chart1"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Tasa de Devolución por Categoría | SVG (JS) | @tlopezalday</h3>
+            <div class="chart-container" id="chart2-svg">
+                </div>
+        </div>
+
+        <div class="card">
+            <h3>Ingresos Brutos por Categoría | Canvas (JS) | @tlopezalday</h3>
+            <div class="chart-container">
+                <canvas id="chart3-canvas"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Canal de Compra (App vs Web) | D3.js | @tlopezalday</h3>
+            <div class="chart-container" id="chart4-d3">
+                </div>
+        </div>
+
+    </div>
+
+    <script>
+
+        // 1. CHART.JS - Gráfico de Líneas
+        // Los datos se estructuran en formato JSON. La librería gestiona automáticamente las escalas,
+        // el responsive y el tooltip al pasar el ratón.
+        const ctx1 = document.getElementById('chart1').getContext('2d');
+        new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+                datasets: [{
+                    label: 'Ingresos Brutos (€)',
+                    data: [2200000, 2050000, 2000000, 1800000, 1700000, 1900000, 2100000, 2050000, 2000000, 1950000, 2150000, 2200000],
+                    borderColor: '#1e3a8a',
+                    backgroundColor: 'rgba(30, 58, 138, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3, // Suavizado de la curva
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: false } }
+            }
+        });
+
+
+        // 2. SVG NATIVO CON JS - Barras Horizontales
+        // Se manipula el DOM directamente
+        // creando nodos XML usando document.createElementNS. Se calculan las coordenadas Y
+        // dinámicamente en un bucle forEach para apilar las barras.
+        const devData = [
+            { cat: 'Electrónica', val: 9.33 },
+            { cat: 'Videojuegos', val: 8.15 },
+            { cat: 'Deportes', val: 6.68 },
+            { cat: 'Hogar', val: 6.59 },
+            { cat: 'Juguetes', val: 6.27 }
+        ];
+        
+        const svgContainer = document.getElementById('chart2-svg');
+        svgContainer.innerHTML = ''; 
+        
+        const svgNS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(svgNS, "svg");
+        svg.setAttribute("width", "100%");
+        svg.setAttribute("height", "100%");
+        
+        let yPos = 20;
+        const barHeight = 25;
+        const maxVal = 10; // Escala hasta 10%
+
+        // Calculamos el ancho real disponible en píxeles para que los valores cuadren
+        const containerWidth = svgContainer.clientWidth || 400;
+        const startX = 80; // Espacio para los nombres de categoría
+        const drawableWidth = containerWidth - startX - 30; // Margen derecho
+
+        devData.forEach(item => {
+            // Etiqueta de la categoría
+            const text = document.createElementNS(svgNS, "text");
+            text.setAttribute("x", "0");
+            text.setAttribute("y", yPos + 16);
+            text.setAttribute("class", "svg-text");
+            text.textContent = item.cat; 
+            
+            // Rectángulo (Barra)
+            const rect = document.createElementNS(svgNS, "rect");
+            rect.setAttribute("x", startX);
+            rect.setAttribute("y", yPos);
+            rect.setAttribute("height", barHeight);
+            
+            // Calculamos los píxeles exactos según el valor
+            const pixelWidth = (item.val / maxVal) * drawableWidth; 
+            rect.setAttribute("width", pixelWidth);
+            rect.setAttribute("class", "svg-bar");
+
+            svg.appendChild(text);
+            svg.appendChild(rect);
+            yPos += 45; 
+        });
+
+        // Eje horizontal (Línea principal)
+        const xAxis = document.createElementNS(svgNS, "line");
+        xAxis.setAttribute("x1", startX); 
+        xAxis.setAttribute("y1", yPos - 15); 
+        xAxis.setAttribute("x2", startX + drawableWidth); 
+        xAxis.setAttribute("y2", yPos - 15);
+        xAxis.setAttribute("stroke", "#9ca3af"); 
+        xAxis.setAttribute("stroke-width", "1");
+        svg.appendChild(xAxis);
+
+        // Bucle para generar las marcas y valores (0%, 2%, 4%, 6%, 8%, 10%)
+        for(let i = 0; i <= maxVal; i += 2) {
+            const tickX = startX + (i / maxVal) * drawableWidth;
+            
+            // Muesca (Tick)
+            const tick = document.createElementNS(svgNS, "line");
+            tick.setAttribute("x1", tickX);
+            tick.setAttribute("y1", yPos - 15); // Empieza en el eje
+            tick.setAttribute("x2", tickX);
+            tick.setAttribute("y2", yPos - 10); // Baja un poco
+            tick.setAttribute("stroke", "#9ca3af");
+            svg.appendChild(tick);
+
+            // Texto (Número)
+            const tickText = document.createElementNS(svgNS, "text");
+            tickText.setAttribute("x", tickX);
+            tickText.setAttribute("y", yPos + 5);
+            tickText.setAttribute("fill", "#6b7280");
+            tickText.setAttribute("font-size", "11px");
+            tickText.setAttribute("text-anchor", "middle"); // Centra el texto en la muesca
+            tickText.textContent = i + "%";
+            svg.appendChild(tickText);
+        }
+
+        svgContainer.appendChild(svg);
+
+
+        // 3. CANVAS NATIVO - Barras Verticales
+        // Accedemos a la matriz de píxeles del navegador (getContext('2d')).
+        // Se calcula la escala mapeando el valor máximo a la altura del canvas
+        // y se dibuja rectángulo a rectángulo con fillRect, restando la altura porque el eje Y
+        // del canvas empieza en la esquina superior izquierda.
+       const canvas = document.getElementById('chart3-canvas');
+		const ctx3 = canvas.getContext('2d');
+
+		canvas.width = canvas.parentElement.clientWidth;
+		canvas.height = 300;
+
+		const catData = [
+			{ cat: 'Elec', val: 1489911 },
+			{ cat: 'Juegos', val: 280814 },
+			{ cat: 'Hogar', val: 253655 },
+			{ cat: 'Juguetes', val: 100000 }
+		];
+
+		const maxIngreso = 1500000;
+		const offsetX = 50; // Margen para los números del eje Y
+		const offsetY = 30; // Margen para los textos del eje X
+		const cWidth = canvas.width - offsetX;
+		const cHeight = canvas.height - offsetY - 20; // 20px de margen superior
+
+		const barWidth = 40;
+		const spacing = (cWidth - (catData.length * barWidth)) / (catData.length + 1);
+
+		// 1. Dibujar los ejes X e Y (Líneas grises)
+		ctx3.beginPath();
+		ctx3.moveTo(offsetX, 20); // Eje Y (arriba)
+		ctx3.lineTo(offsetX, canvas.height - offsetY); // Esquina inferior izquierda
+		ctx3.lineTo(canvas.width - 20, canvas.height - offsetY); // Eje X (hacia la derecha)
+		ctx3.strokeStyle = '#9ca3af';
+		ctx3.lineWidth = 1;
+		ctx3.stroke();
+
+		// 2. Dibujar las escalas del Eje Y (0, 0.5M, 1M, 1.5M)
+		ctx3.fillStyle = '#6b7280';
+		ctx3.font = '11px sans-serif';
+		ctx3.textAlign = 'right';
+		ctx3.textBaseline = 'middle';
+
+		const steps = 3; 
+		for(let i = 0; i <= steps; i++) {
+			const val = (maxIngreso / steps) * i;
+			// Calcular altura invertida (0 abajo, máximo arriba)
+			const y = canvas.height - offsetY - (val / maxIngreso) * cHeight;
+    
+			// Texto de la escala
+			ctx3.fillText((val / 1000000).toFixed(1) + " M", offsetX - 8, y);
+    
+			// Pequeña muesca (tick) en el eje
+			ctx3.beginPath();
+			ctx3.moveTo(offsetX - 4, y);
+			ctx3.lineTo(offsetX, y);
+			ctx3.stroke();
+		}
+
+		// 3. Dibujar las barras y las categorías del eje X
+		ctx3.textAlign = 'center';
+		ctx3.textBaseline = 'top';
+
+		catData.forEach((item, index) => {
+			const barPixelHeight = (item.val / maxIngreso) * cHeight;
+			const x = offsetX + spacing + index * (barWidth + spacing);
+			const y = canvas.height - offsetY - barPixelHeight;
+
+			// Pintar la barra
+			ctx3.fillStyle = '#1e3a8a';
+			ctx3.fillRect(x, y, barWidth, barPixelHeight);
+    
+			// Etiqueta debajo del eje X
+			ctx3.fillStyle = '#6b7280';
+			ctx3.fillText(item.cat, x + (barWidth / 2), canvas.height - offsetY + 8);
+		});
+
+ 
+        // 4. D3.JS - Pie chart (Donut)
+        // Utilizamos d3.pie() para transformar
+        // los datos en ángulos (radianes). Luego, d3.arc() con esos ángulos 
+        // genera los vectores matemáticos (paths) para dibujar los trozos del pie.
+        const d3Data = [
+            { label: 'App', value: 2325818 },
+            { label: 'Web', value: 2320186 }
+        ];
+
+        const width = document.getElementById('chart4-d3').clientWidth;
+        const height = 300;
+        const radius = Math.min(width, height) / 2;
+
+        const svgD3 = d3.select("#chart4-d3")
+          .append("svg")
+            .attr("width", width)
+            .attr("height", height)
+          .append("g")
+            .attr("transform", `translate(${width/2}, ${height/2})`);
+
+        const color = d3.scaleOrdinal().range(["#1e40af", "#60a5fa"]);
+
+        // Transforma los datos a ángulos
+        const pie = d3.pie().value(d => d.value);
+        const data_ready = pie(d3Data);
+
+        // Generador de formas (paths)
+        const arcGenerator = d3.arc()
+            .innerRadius(radius * 0.5) // Al darle radio interior se convierte en Donut
+            .outerRadius(radius * 0.8);
+
+        // Añadir los trozos al SVG
+        svgD3.selectAll('paths')
+            .data(data_ready)
+            .join('path')
+            .attr('d', arcGenerator)
+            .attr('fill', d => color(d.data.label))
+            .attr("stroke", "white")
+            .style("stroke-width", "2px");
+
+        // Añadir etiquetas
+        svgD3.selectAll('text')
+            .data(data_ready)
+            .join('text')
+            .text(d => `${d.data.label} (${Math.round((d.data.value/4646004)*100).toFixed(1)}%)`)
+            .attr("transform", d => `translate(${arcGenerator.centroid(d)})`)
+            .style("text-anchor", "middle")
+            .style("font-size", 12)
+            .style("fill", "#000")
+            .style("font-family", "sans-serif");
+    </script>
+</body>
+</html>
