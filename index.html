@@ -97,10 +97,10 @@
 
     <script>
 
+        // ==========================================
         // 1. CHART.JS - Gráfico de Líneas
-        // Los datos se estructuran en formato JSON. La librería gestiona automáticamente las escalas,
-        // el responsive y el tooltip al pasar el ratón.
-        const ctx1 = document.getElementById('chart1').getContext('2d');
+        // ==========================================
+        var ctx1 = document.getElementById('chart1').getContext('2d');
         new Chart(ctx1, {
             type: 'line',
             data: {
@@ -111,7 +111,7 @@
                     borderColor: '#1e3a8a',
                     backgroundColor: 'rgba(30, 58, 138, 0.1)',
                     borderWidth: 2,
-                    tension: 0.3, // Suavizado de la curva
+                    tension: 0.3,
                     fill: true
                 }]
             },
@@ -123,11 +123,10 @@
         });
 
 
-        // 2. SVG NATIVO CON JS - Barras Horizontales
-        // Se manipula el DOM directamente
-        // creando nodos XML usando document.createElementNS. Se calculan las coordenadas Y
-        // dinámicamente en un bucle forEach para apilar las barras.
-        const devData = [
+        // ==========================================
+        // 2. SVG NATIVO CON JS - Barras Horizontales con Ejes
+        // ==========================================
+        var devData = [
             { cat: 'Electrónica', val: 9.33 },
             { cat: 'Videojuegos', val: 8.15 },
             { cat: 'Deportes', val: 6.68 },
@@ -135,49 +134,48 @@
             { cat: 'Juguetes', val: 6.27 }
         ];
         
-        const svgContainer = document.getElementById('chart2-svg');
+        var svgContainer = document.getElementById('chart2-svg');
         svgContainer.innerHTML = ''; 
         
-        const svgNS = "http://www.w3.org/2000/svg";
-        const svg = document.createElementNS(svgNS, "svg");
+        var svgNS = "http://www.w3.org/2000/svg";
+        var svg = document.createElementNS(svgNS, "svg");
         svg.setAttribute("width", "100%");
         svg.setAttribute("height", "100%");
         
-        let yPos = 20;
-        const barHeight = 25;
-        const maxVal = 10; // Escala hasta 10%
+        var yPos = 20;
+        var barHeight = 25;
+        var maxVal = 10; 
 
-        // Calculamos el ancho real disponible en píxeles para que los valores cuadren
-        const containerWidth = svgContainer.clientWidth || 400;
-        const startX = 80; // Espacio para los nombres de categoría
-        const drawableWidth = containerWidth - startX - 30; // Margen derecho
+        var containerWidth = svgContainer.clientWidth || 400;
+        var startX = 80; 
+        var drawableWidth = containerWidth - startX - 30; 
 
-        devData.forEach(item => {
-            // Etiqueta de la categoría
-            const text = document.createElementNS(svgNS, "text");
+        // Bucle clásico para barras
+        for (var i = 0; i < devData.length; i++) {
+            var item = devData[i];
+            
+            var text = document.createElementNS(svgNS, "text");
             text.setAttribute("x", "0");
             text.setAttribute("y", yPos + 16);
             text.setAttribute("class", "svg-text");
             text.textContent = item.cat; 
             
-            // Rectángulo (Barra)
-            const rect = document.createElementNS(svgNS, "rect");
+            var rect = document.createElementNS(svgNS, "rect");
             rect.setAttribute("x", startX);
             rect.setAttribute("y", yPos);
             rect.setAttribute("height", barHeight);
             
-            // Calculamos los píxeles exactos según el valor
-            const pixelWidth = (item.val / maxVal) * drawableWidth; 
+            var pixelWidth = (item.val / maxVal) * drawableWidth; 
             rect.setAttribute("width", pixelWidth);
             rect.setAttribute("class", "svg-bar");
 
             svg.appendChild(text);
             svg.appendChild(rect);
-            yPos += 45; 
-        });
+            yPos = yPos + 45; 
+        }
 
-        // Eje horizontal (Línea principal)
-        const xAxis = document.createElementNS(svgNS, "line");
+        // Eje horizontal
+        var xAxis = document.createElementNS(svgNS, "line");
         xAxis.setAttribute("x1", startX); 
         xAxis.setAttribute("y1", yPos - 15); 
         xAxis.setAttribute("x2", startX + drawableWidth); 
@@ -186,160 +184,152 @@
         xAxis.setAttribute("stroke-width", "1");
         svg.appendChild(xAxis);
 
-        // Bucle para generar las marcas y valores (0%, 2%, 4%, 6%, 8%, 10%)
-        for(let i = 0; i <= maxVal; i += 2) {
-            const tickX = startX + (i / maxVal) * drawableWidth;
+        // Bucle clásico para marcas (ticks)
+        for(var j = 0; j <= maxVal; j = j + 2) {
+            var tickX = startX + (j / maxVal) * drawableWidth;
             
-            // Muesca (Tick)
-            const tick = document.createElementNS(svgNS, "line");
+            var tick = document.createElementNS(svgNS, "line");
             tick.setAttribute("x1", tickX);
-            tick.setAttribute("y1", yPos - 15); // Empieza en el eje
+            tick.setAttribute("y1", yPos - 15); 
             tick.setAttribute("x2", tickX);
-            tick.setAttribute("y2", yPos - 10); // Baja un poco
+            tick.setAttribute("y2", yPos - 10); 
             tick.setAttribute("stroke", "#9ca3af");
             svg.appendChild(tick);
 
-            // Texto (Número)
-            const tickText = document.createElementNS(svgNS, "text");
+            var tickText = document.createElementNS(svgNS, "text");
             tickText.setAttribute("x", tickX);
             tickText.setAttribute("y", yPos + 5);
             tickText.setAttribute("fill", "#6b7280");
             tickText.setAttribute("font-size", "11px");
-            tickText.setAttribute("text-anchor", "middle"); // Centra el texto en la muesca
-            tickText.textContent = i + "%";
+            tickText.setAttribute("text-anchor", "middle"); 
+            tickText.textContent = j + "%";
             svg.appendChild(tickText);
         }
 
         svgContainer.appendChild(svg);
 
 
+        // ==========================================
         // 3. CANVAS NATIVO - Barras Verticales
-        // Accedemos a la matriz de píxeles del navegador (getContext('2d')).
-        // Se calcula la escala mapeando el valor máximo a la altura del canvas
-        // y se dibuja rectángulo a rectángulo con fillRect, restando la altura porque el eje Y
-        // del canvas empieza en la esquina superior izquierda.
-       const canvas = document.getElementById('chart3-canvas');
-		const ctx3 = canvas.getContext('2d');
+        // ==========================================
+        var canvas = document.getElementById('chart3-canvas');
+        var ctx3 = canvas.getContext('2d');
 
-		canvas.width = canvas.parentElement.clientWidth;
-		canvas.height = 300;
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = 300;
 
-		const catData = [
-			{ cat: 'Elec', val: 1489911 },
-			{ cat: 'Juegos', val: 280814 },
-			{ cat: 'Hogar', val: 253655 },
-			{ cat: 'Juguetes', val: 100000 }
-		];
+        var catData = [
+            { cat: 'Elec', val: 1489911 },
+            { cat: 'Juegos', val: 280814 },
+            { cat: 'Hogar', val: 253655 },
+            { cat: 'Juguetes', val: 100000 }
+        ];
 
-		const maxIngreso = 1500000;
-		const offsetX = 50; // Margen para los números del eje Y
-		const offsetY = 30; // Margen para los textos del eje X
-		const cWidth = canvas.width - offsetX;
-		const cHeight = canvas.height - offsetY - 20; // 20px de margen superior
+        var maxIngreso = 1500000;
+        var offsetX = 50; 
+        var offsetY = 30; 
+        var cWidth = canvas.width - offsetX;
+        var cHeight = canvas.height - offsetY - 20; 
 
-		const barWidth = 40;
-		const spacing = (cWidth - (catData.length * barWidth)) / (catData.length + 1);
+        var barWidth = 40;
+        var spacing = (cWidth - (catData.length * barWidth)) / (catData.length + 1);
 
-		// 1. Dibujar los ejes X e Y (Líneas grises)
-		ctx3.beginPath();
-		ctx3.moveTo(offsetX, 20); // Eje Y (arriba)
-		ctx3.lineTo(offsetX, canvas.height - offsetY); // Esquina inferior izquierda
-		ctx3.lineTo(canvas.width - 20, canvas.height - offsetY); // Eje X (hacia la derecha)
-		ctx3.strokeStyle = '#9ca3af';
-		ctx3.lineWidth = 1;
-		ctx3.stroke();
+        // 1. Dibujar los ejes X e Y
+        ctx3.beginPath();
+        ctx3.moveTo(offsetX, 20); 
+        ctx3.lineTo(offsetX, canvas.height - offsetY); 
+        ctx3.lineTo(canvas.width - 20, canvas.height - offsetY); 
+        ctx3.strokeStyle = '#9ca3af';
+        ctx3.lineWidth = 1;
+        ctx3.stroke();
 
-		// 2. Dibujar las escalas del Eje Y (0, 0.5M, 1M, 1.5M)
-		ctx3.fillStyle = '#6b7280';
-		ctx3.font = '11px sans-serif';
-		ctx3.textAlign = 'right';
-		ctx3.textBaseline = 'middle';
+        ctx3.fillStyle = '#6b7280';
+        ctx3.font = '11px sans-serif';
+        ctx3.textAlign = 'right';
+        ctx3.textBaseline = 'middle';
 
-		const steps = 3; 
-		for(let i = 0; i <= steps; i++) {
-			const val = (maxIngreso / steps) * i;
-			// Calcular altura invertida (0 abajo, máximo arriba)
-			const y = canvas.height - offsetY - (val / maxIngreso) * cHeight;
+        var steps = 3; 
+        for(var k = 0; k <= steps; k++) {
+            var valY = (maxIngreso / steps) * k;
+            var yEscala = canvas.height - offsetY - (valY / maxIngreso) * cHeight;
     
-			// Texto de la escala
-			ctx3.fillText((val / 1000000).toFixed(1) + " M", offsetX - 8, y);
+            ctx3.fillText((valY / 1000000).toFixed(1) + " M", offsetX - 8, yEscala);
     
-			// Pequeña muesca (tick) en el eje
-			ctx3.beginPath();
-			ctx3.moveTo(offsetX - 4, y);
-			ctx3.lineTo(offsetX, y);
-			ctx3.stroke();
-		}
+            ctx3.beginPath();
+            ctx3.moveTo(offsetX - 4, yEscala);
+            ctx3.lineTo(offsetX, yEscala);
+            ctx3.stroke();
+        }
 
-		// 3. Dibujar las barras y las categorías del eje X
-		ctx3.textAlign = 'center';
-		ctx3.textBaseline = 'top';
+        ctx3.textAlign = 'center';
+        ctx3.textBaseline = 'top';
 
-		catData.forEach((item, index) => {
-			const barPixelHeight = (item.val / maxIngreso) * cHeight;
-			const x = offsetX + spacing + index * (barWidth + spacing);
-			const y = canvas.height - offsetY - barPixelHeight;
+        // Bucle clásico para pintar las barras
+        for(var m = 0; m < catData.length; m++) {
+            var itemData = catData[m];
+            var barPixelHeight = (itemData.val / maxIngreso) * cHeight;
+            var xBar = offsetX + spacing + m * (barWidth + spacing);
+            var yBar = canvas.height - offsetY - barPixelHeight;
 
-			// Pintar la barra
-			ctx3.fillStyle = '#1e3a8a';
-			ctx3.fillRect(x, y, barWidth, barPixelHeight);
+            ctx3.fillStyle = '#1e3a8a';
+            ctx3.fillRect(xBar, yBar, barWidth, barPixelHeight);
     
-			// Etiqueta debajo del eje X
-			ctx3.fillStyle = '#6b7280';
-			ctx3.fillText(item.cat, x + (barWidth / 2), canvas.height - offsetY + 8);
-		});
+            ctx3.fillStyle = '#6b7280';
+            ctx3.fillText(itemData.cat, xBar + (barWidth / 2), canvas.height - offsetY + 8);
+        }
 
  
+        // ==========================================
         // 4. D3.JS - Pie chart (Donut)
-        // Utilizamos d3.pie() para transformar
-        // los datos en ángulos (radianes). Luego, d3.arc() con esos ángulos 
-        // genera los vectores matemáticos (paths) para dibujar los trozos del pie.
-        const d3Data = [
+        // ==========================================
+        var d3Data = [
             { label: 'App', value: 2325818 },
             { label: 'Web', value: 2320186 }
         ];
 
-        const width = document.getElementById('chart4-d3').clientWidth;
-        const height = 300;
-        const radius = Math.min(width, height) / 2;
+        var widthD3 = document.getElementById('chart4-d3').clientWidth;
+        var heightD3 = 300;
+        var radius = Math.min(widthD3, heightD3) / 2;
 
-        const svgD3 = d3.select("#chart4-d3")
+        var svgD3 = d3.select("#chart4-d3")
           .append("svg")
-            .attr("width", width)
-            .attr("height", height)
+            .attr("width", widthD3)
+            .attr("height", heightD3)
           .append("g")
-            .attr("transform", `translate(${width/2}, ${height/2})`);
+            // Concatenación clásica de strings
+            .attr("transform", "translate(" + (widthD3/2) + ", " + (heightD3/2) + ")");
 
-        const color = d3.scaleOrdinal().range(["#1e40af", "#60a5fa"]);
+        var color = d3.scaleOrdinal().range(["#1e40af", "#60a5fa"]);
 
-        // Transforma los datos a ángulos
-        const pie = d3.pie().value(d => d.value);
-        const data_ready = pie(d3Data);
+        // Función clásica en lugar de flecha (d => d.value)
+        var pie = d3.pie().value(function(d) { return d.value; });
+        var data_ready = pie(d3Data);
 
-        // Generador de formas (paths)
-        const arcGenerator = d3.arc()
-            .innerRadius(radius * 0.5) // Al darle radio interior se convierte en Donut
+        var arcGenerator = d3.arc()
+            .innerRadius(radius * 0.5) 
             .outerRadius(radius * 0.8);
 
-        // Añadir los trozos al SVG
         svgD3.selectAll('paths')
             .data(data_ready)
             .join('path')
             .attr('d', arcGenerator)
-            .attr('fill', d => color(d.data.label))
+            .attr('fill', function(d) { return color(d.data.label); })
             .attr("stroke", "white")
             .style("stroke-width", "2px");
 
-        // Añadir etiquetas
         svgD3.selectAll('text')
             .data(data_ready)
             .join('text')
-            .text(d => `${d.data.label} (${Math.round((d.data.value/4646004)*100).toFixed(1)}%)`)
-            .attr("transform", d => `translate(${arcGenerator.centroid(d)})`)
+            .text(function(d) { 
+                var porcentaje = ((d.data.value / 4646004) * 100).toFixed(1);
+                return d.data.label + " (" + porcentaje + "%)"; 
+            })
+            .attr("transform", function(d) { return "translate(" + arcGenerator.centroid(d) + ")"; })
             .style("text-anchor", "middle")
             .style("font-size", 12)
             .style("fill", "#000")
             .style("font-family", "sans-serif");
+            
     </script>
 </body>
 </html>
